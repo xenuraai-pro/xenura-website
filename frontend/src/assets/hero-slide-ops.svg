@@ -1,0 +1,44 @@
+<svg width="1080" height="760" viewBox="0 0 1080 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="90" y1="70" x2="970" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F2F58"/>
+      <stop offset="1" stop-color="#147C8A"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(860 150) rotate(90) scale(180 210)">
+      <stop stop-color="#74F5EE" stop-opacity="0.65"/>
+      <stop offset="1" stop-color="#74F5EE" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="36" y="30" width="1008" height="700" rx="40" fill="url(#bg)"/>
+  <rect x="36" y="30" width="1008" height="700" rx="40" stroke="rgba(255,255,255,0.24)"/>
+  <circle cx="860" cy="150" r="180" fill="url(#glow)"/>
+
+  <rect x="94" y="82" width="892" height="44" rx="22" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="126" cy="104" r="7" fill="rgba(255,255,255,0.78)"/>
+  <circle cx="150" cy="104" r="7" fill="rgba(255,255,255,0.52)"/>
+  <circle cx="174" cy="104" r="7" fill="rgba(255,255,255,0.34)"/>
+
+  <rect x="94" y="146" width="892" height="526" rx="30" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)"/>
+
+  <rect x="142" y="194" width="430" height="430" rx="26" fill="rgba(255,255,255,0.9)"/>
+  <rect x="178" y="236" width="170" height="14" rx="7" fill="#11407A" fill-opacity="0.9"/>
+  <rect x="178" y="264" width="110" height="10" rx="5" fill="#11407A" fill-opacity="0.52"/>
+
+  <rect x="178" y="306" width="56" height="256" rx="12" fill="#1F6EA5"/>
+  <rect x="250" y="348" width="56" height="214" rx="12" fill="#10A0A1"/>
+  <rect x="322" y="388" width="56" height="174" rx="12" fill="#1D4F85"/>
+  <rect x="394" y="334" width="56" height="228" rx="12" fill="#0F7F85"/>
+  <rect x="466" y="286" width="56" height="276" rx="12" fill="#0C5C79"/>
+
+  <rect x="604" y="194" width="334" height="212" rx="24" fill="rgba(9,48,86,0.58)" stroke="rgba(255,255,255,0.24)"/>
+  <path d="M638 356C674 325 706 338 738 305C772 270 806 278 838 240C856 219 882 210 902 196" stroke="#A8FFF4" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="638" cy="356" r="12" fill="#A8FFF4"/>
+  <circle cx="738" cy="305" r="12" fill="#A8FFF4"/>
+  <circle cx="838" cy="240" r="12" fill="#A8FFF4"/>
+
+  <rect x="604" y="430" width="334" height="194" rx="24" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.28)"/>
+  <rect x="636" y="466" width="218" height="14" rx="7" fill="rgba(255,255,255,0.88)"/>
+  <rect x="636" y="492" width="170" height="10" rx="5" fill="rgba(255,255,255,0.56)"/>
+  <rect x="636" y="530" width="270" height="54" rx="14" fill="rgba(255,255,255,0.2)"/>
+</svg>
