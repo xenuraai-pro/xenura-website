@@ -34,18 +34,45 @@ const corsOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(',').map((o) => o.trim()).filter(Boolean)
   : ['http://localhost:5173', 'http://127.0.0.1:5173'];
 
+function normalizeHost(hostname) {
+  return hostname.toLowerCase().replace(/^www\./, '');
+}
+
+function isAllowedCorsOrigin(origin) {
+  if (!origin) return true;
+  if (corsOrigins.includes(origin)) return true;
+
+  if (/^https:\/\/[\w.-]+\.vercel\.app$/i.test(origin)) return true;
+  if (/^https:\/\/(www\.)?xenuralabs\.com$/i.test(origin)) return true;
+
+  try {
+    const originUrl = new URL(origin);
+    const originHost = normalizeHost(originUrl.hostname);
+
+    for (const allowed of corsOrigins) {
+      try {
+        const allowedUrl = new URL(allowed);
+        if (
+          originUrl.protocol === allowedUrl.protocol &&
+          normalizeHost(allowedUrl.hostname) === originHost
+        ) {
+          return true;
+        }
+      } catch {
+        // skip invalid FRONTEND_URL entry
+      }
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+}
+
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || corsOrigins.includes(origin)) {
-        callback(null, true);
-        return;
-      }
-      if (/^https:\/\/[\w.-]+\.vercel\.app$/i.test(origin)) {
-        callback(null, true);
-        return;
-      }
-      callback(new Error(`CORS blocked for origin: ${origin}`));
+      callback(null, isAllowedCorsOrigin(origin));
     },
     credentials: true,
   })
