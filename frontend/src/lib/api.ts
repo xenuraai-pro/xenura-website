@@ -1,4 +1,4 @@
-function resolveApiOrigin(): string {
+function getApiOrigin(): string {
   const fromEnv = import.meta.env.VITE_API_URL?.trim();
   if (fromEnv) return fromEnv.replace(/\/$/, '');
   if (import.meta.env.DEV) return 'http://localhost:5000';
@@ -6,7 +6,7 @@ function resolveApiOrigin(): string {
   return '';
 }
 
-export const API_ORIGIN = resolveApiOrigin();
+export const API_ORIGIN = getApiOrigin();
 const API_BASE_URL = `${API_ORIGIN}/api`;
 
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -42,7 +42,8 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
 export function resolveMediaUrl(path: string): string {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  return `${API_ORIGIN}${path.startsWith('/') ? path : `/${path}`}`;
+  const origin = getApiOrigin();
+  return `${origin}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
 export interface Submission {
@@ -74,6 +75,15 @@ export interface ModalPromo {
   bannerLink: string;
   hasBanner?: boolean;
   updatedAt: string;
+}
+
+/** Versioned banner URL — enables long CDN cache; busts when admin re-uploads. */
+export function getBannerMediaUrl(promo: Pick<ModalPromo, 'hasBanner' | 'imageUrl' | 'updatedAt'>): string {
+  if (!promo.hasBanner || !promo.imageUrl) return '';
+  const base = resolveMediaUrl(promo.imageUrl);
+  if (!promo.updatedAt) return base;
+  const version = encodeURIComponent(promo.updatedAt);
+  return `${base}?v=${version}`;
 }
 
 export const api = {
@@ -128,6 +138,24 @@ export const api = {
     }
     
     return data;
+  },
+
+  async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
+    return apiRequest('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  async resetPassword(payload: {
+    token: string;
+    password: string;
+    confirmPassword: string;
+  }): Promise<{ success: boolean; message: string }> {
+    return apiRequest('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
   },
 
   async fetchPopupPromo(): Promise<ModalPromo> {

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Lock, User, Eye, EyeOff, ArrowRight, LayoutDashboard } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { firstFormError, validateAdminLogin } from '@/lib/formValidation';
 import { BRAND_NAME } from '@/content/companyContact';
 import { Logo } from '@/components/Logo';
 
@@ -11,6 +12,7 @@ const AdminLoginPage = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{ username?: string; password?: string }>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,14 +23,16 @@ const AdminLoginPage = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) {
-      toast.error('Please enter both username and password.');
+    const nextErrors = validateAdminLogin(username, password);
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      toast.error(firstFormError(nextErrors) || 'Please fix the highlighted fields.');
       return;
     }
 
     setIsLoading(true);
     try {
-      const data = await api.login(username, password);
+      const data = await api.login(username.trim(), password);
       toast.success(data.message || 'Welcome back!');
       window.location.href = '/admin/dashboard';
     } catch (err: unknown) {
@@ -85,39 +89,72 @@ const AdminLoginPage = () => {
               Enter your credentials to access the dashboard.
             </p>
 
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form noValidate onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                <label htmlFor="admin-username" className="block text-sm font-medium text-slate-700 mb-1.5">
                   Username
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
+                    id="admin-username"
                     type="text"
-                    required
                     autoComplete="username"
+                    maxLength={50}
                     placeholder="Admin username"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500"
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-lg border bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 ${
+                      errors.username ? 'border-red-400' : 'border-slate-300'
+                    }`}
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      if (errors.username) {
+                        setErrors((prev) => ({ ...prev, username: validateAdminLogin(e.target.value, password).username }));
+                      }
+                    }}
+                    onBlur={() =>
+                      setErrors((prev) => ({ ...prev, username: validateAdminLogin(username, password).username }))
+                    }
+                    aria-invalid={Boolean(errors.username)}
                   />
                 </div>
+                {errors.username && (
+                  <p className="mt-1.5 text-xs text-red-600" role="alert">
+                    {errors.username}
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Password
-                </label>
+                <div className="flex items-center justify-between gap-3 mb-1.5">
+                  <label htmlFor="admin-password" className="block text-sm font-medium text-slate-700">
+                    Password
+                  </label>
+                  <Link to="/admin/forgot-password" className="text-xs text-orange-600 hover:underline font-medium">
+                    Forgot password?
+                  </Link>
+                </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
+                    id="admin-password"
                     type={showPassword ? 'text' : 'password'}
-                    required
                     autoComplete="current-password"
                     placeholder="••••••••••••"
-                    className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500"
+                    className={`w-full pl-10 pr-10 py-2.5 rounded-lg border bg-white text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500 ${
+                      errors.password ? 'border-red-400' : 'border-slate-300'
+                    }`}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (errors.password) {
+                        setErrors((prev) => ({ ...prev, password: validateAdminLogin(username, e.target.value).password }));
+                      }
+                    }}
+                    onBlur={() =>
+                      setErrors((prev) => ({ ...prev, password: validateAdminLogin(username, password).password }))
+                    }
+                    aria-invalid={Boolean(errors.password)}
                   />
                   <button
                     type="button"
@@ -128,6 +165,11 @@ const AdminLoginPage = () => {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {errors.password && (
+                  <p className="mt-1.5 text-xs text-red-600" role="alert">
+                    {errors.password}
+                  </p>
+                )}
               </div>
 
               <button

@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { X } from 'lucide-react';
 
 type PromoBannerPanelProps = {
   src: string;
   bannerLink?: string;
   onClose?: () => void;
+  onImageError?: () => void;
   showClose?: boolean;
   /** Admin mini preview uses a fixed column width */
   preview?: boolean;
@@ -16,11 +18,23 @@ export function PromoBannerPanel({
   src,
   bannerLink,
   onClose,
+  onImageError,
   showClose = true,
   preview = false,
 }: PromoBannerPanelProps) {
+  const [loaded, setLoaded] = useState(() => src.startsWith('blob:'));
+
   const image = (
-    <img src={src} alt="Promotional banner" className={preview ? 'w-full h-full object-contain object-center' : bannerImageClass} />
+    <img
+      src={src}
+      alt="Promotional banner"
+      className={`${preview ? 'w-full h-full object-contain object-center' : bannerImageClass}`}
+      loading="eager"
+      decoding="async"
+      fetchPriority="high"
+      onLoad={() => setLoaded(true)}
+      onError={onImageError}
+    />
   );
 
   return (
@@ -31,6 +45,10 @@ export function PromoBannerPanel({
           : 'w-full lg:w-[42%] shrink-0 relative bg-slate-900 flex items-center justify-center lg:self-stretch min-h-0 overflow-hidden'
       }
     >
+      {!loaded && !preview && (
+        <div className="absolute inset-0 bg-gradient-to-br from-[#08295a] via-[#4a1c96] to-[#cc4a18] animate-pulse" />
+      )}
+
       <div
         className={
           preview

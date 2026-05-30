@@ -1,8 +1,8 @@
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import WhatsAppChatbot from '@/components/WhatsAppChatbot';
 import { usePageMeta } from '@/hooks/usePageMeta';
-import { COMPANY_EMAIL, COMPANY_NAME, COMPANY_WEBSITE, BRAND_NAME } from '@/content/companyContact';
+import { companyEmailsText } from '@/components/CompanyEmailLinks';
+import { COMPANY_NAME, COMPANY_WEBSITE, BRAND_NAME } from '@/content/companyContact';
 
 const sections = [
   {
@@ -27,7 +27,7 @@ const sections = [
   },
   {
     title: 'Contact',
-    body: `Questions about these terms: ${COMPANY_EMAIL} (${COMPANY_NAME}).`,
+    body: `Questions about these terms: ${companyEmailsText()} (${COMPANY_NAME}).`,
   },
 ];
 
@@ -66,7 +66,6 @@ const TermsPage = () => {
         </section>
       </main>
       <Footer />
-      <WhatsAppChatbot />
     </div>
   );
 };

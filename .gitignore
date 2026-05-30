@@ -13,10 +13,6 @@ build/
 # Local database
 *.db
 
-# User uploads
-backend/uploads/*
-!backend/uploads/.gitkeep
-
 # Deploy / hosting
 .netlify/
 

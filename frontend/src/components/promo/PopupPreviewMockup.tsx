@@ -1,6 +1,6 @@
 import { DefaultPromoPanel } from '@/components/promo/DefaultPromoPanel';
 import { PromoBannerPanel } from '@/components/promo/PromoBannerPanel';
-import { resolveMediaUrl, type ModalPromo } from '@/lib/api';
+import { getBannerMediaUrl, type ModalPromo } from '@/lib/api';
 
 type Props = {
   promo: ModalPromo;
@@ -9,7 +9,7 @@ type Props = {
 
 /** Realistic popup preview for admin (desktop + mobile layouts) */
 export const PopupPreviewMockup = ({ promo, bannerPreviewUrl }: Props) => {
-  const showBanner = promo.isActive && bannerPreviewUrl;
+  const showBanner = Boolean(promo.isActive && promo.hasBanner && bannerPreviewUrl);
 
   const formSide = (
     <div className="flex-1 p-4 flex flex-col bg-white border-slate-100 min-w-0">
@@ -85,5 +85,5 @@ function MockField({ label, short }: { label: string; short?: boolean }) {
 }
 
 export function getBannerPreviewUrl(promo: ModalPromo): string {
-  return promo.imageUrl ? resolveMediaUrl(promo.imageUrl) : '';
+  return getBannerMediaUrl(promo);
 }

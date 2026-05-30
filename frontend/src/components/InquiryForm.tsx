@@ -8,6 +8,12 @@ import {
   type InquiryFormData,
   type InquirySource,
 } from '@/lib/inquiryForm';
+import {
+  firstFormError,
+  sanitizePhoneInput,
+  validateInquiryForm,
+  type InquiryFormErrors,
+} from '@/lib/formValidation';
 
 type InquiryFormProps = {
   variant: 'light' | 'dark';
@@ -37,6 +43,7 @@ export const InquiryForm = ({
 }: InquiryFormProps) => {
   const isCareer = mode === 'career';
   const [formData, setFormData] = useState<InquiryFormData>(emptyInquiryForm());
+  const [errors, setErrors] = useState<InquiryFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -62,18 +69,29 @@ export const InquiryForm = ({
     ? 'w-full px-4 py-3.5 rounded-xl bg-white/[0.03] border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/25 transition-all'
     : 'w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#7f4adf]/25 focus:border-[#7f4adf] transition-all';
 
-  const inputWithIconClass = isDark
-    ? `${inputClass} pl-10`
-    : `${inputClass} pl-10`;
+  const inputWithIconClass = `${inputClass} pl-10`;
+
+  const fieldErrorClass = isDark ? 'text-red-400' : 'text-red-600';
+
+  const inputErrorClass = (field: keyof InquiryFormData) =>
+    errors[field]
+      ? isDark
+        ? 'border-red-400/70 focus:border-red-400 focus:ring-red-400/25'
+        : 'border-red-400 focus:border-red-500 focus:ring-red-500/25'
+      : '';
+
+  const validateField = (field: keyof InquiryFormData, data: InquiryFormData = formData) => {
+    const nextErrors = validateInquiryForm(data, { isCareer });
+    setErrors((prev) => ({ ...prev, [field]: nextErrors[field] }));
+    return !nextErrors[field];
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
-      toast.error('Please fill in name, email, and message.');
-      return;
-    }
-    if (isCareer && !formData.resumeUrl.trim()) {
-      toast.error('Please add your resume Google Drive link.');
+    const nextErrors = validateInquiryForm(formData, { isCareer });
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      toast.error(firstFormError(nextErrors) || 'Please fix the highlighted fields.');
       return;
     }
 
@@ -81,11 +99,17 @@ export const InquiryForm = ({
     try {
       await api.submitInquiry({
         ...formData,
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        company: formData.company.trim(),
+        message: formData.message.trim(),
         source: isCareer ? 'career' : source,
         resumeUrl: isCareer ? formData.resumeUrl.trim() : undefined,
       });
       toast.success('Thank you! Your inquiry was submitted successfully.');
       setFormData(emptyInquiryForm());
+      setErrors({});
       onSuccess?.();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to submit. Please try again.');
@@ -95,11 +119,25 @@ export const InquiryForm = ({
   };
 
   const update = (field: keyof InquiryFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [field]: value };
+      if (errors[field]) {
+        const nextErrors = validateInquiryForm(next, { isCareer });
+        setErrors((prevErrors) => ({ ...prevErrors, [field]: nextErrors[field] }));
+      }
+      return next;
+    });
   };
 
+  const renderError = (field: keyof InquiryFormData) =>
+    errors[field] ? (
+      <p className={`mt-1.5 text-xs ${fieldErrorClass}`} role="alert">
+        {errors[field]}
+      </p>
+    ) : null;
+
   return (
-    <form onSubmit={handleSubmit} className={isDark ? 'space-y-5' : 'space-y-4'}>
+    <form noValidate onSubmit={handleSubmit} className={isDark ? 'space-y-5' : 'space-y-4'}>
       {showIntro && (
         <div>
           <h3
@@ -125,12 +163,17 @@ export const InquiryForm = ({
           <input
             id={`${idPrefix}-name`}
             type="text"
-            required
+            autoComplete="name"
+            maxLength={100}
             placeholder="John Doe"
-            className={inputClass}
+            className={`${inputClass} ${inputErrorClass('name')}`}
             value={formData.name}
             onChange={(e) => update('name', e.target.value)}
+            onBlur={() => validateField('name')}
+            aria-invalid={Boolean(errors.name)}
+            aria-describedby={errors.name ? `${idPrefix}-name-error` : undefined}
           />
+          <div id={`${idPrefix}-name-error`}>{renderError('name')}</div>
         </div>
         <div>
           <label htmlFor={`${idPrefix}-email`} className={labelClass}>
@@ -139,12 +182,16 @@ export const InquiryForm = ({
           <input
             id={`${idPrefix}-email`}
             type="email"
-            required
+            autoComplete="email"
+            maxLength={254}
             placeholder="you@company.com"
-            className={inputClass}
+            className={`${inputClass} ${inputErrorClass('email')}`}
             value={formData.email}
             onChange={(e) => update('email', e.target.value)}
+            onBlur={() => validateField('email')}
+            aria-invalid={Boolean(errors.email)}
           />
+          {renderError('email')}
         </div>
       </div>
 
@@ -158,12 +205,19 @@ export const InquiryForm = ({
             <input
               id={`${idPrefix}-phone`}
               type="tel"
+              autoComplete="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={15}
               placeholder="9876543210"
-              className={inputWithIconClass}
+              className={`${inputWithIconClass} ${inputErrorClass('phone')}`}
               value={formData.phone}
-              onChange={(e) => update('phone', e.target.value)}
+              onChange={(e) => update('phone', sanitizePhoneInput(e.target.value))}
+              onBlur={() => validateField('phone')}
+              aria-invalid={Boolean(errors.phone)}
             />
           </div>
+          {renderError('phone')}
         </div>
         <div>
           <label htmlFor={`${idPrefix}-company`} className={labelClass}>
@@ -174,12 +228,17 @@ export const InquiryForm = ({
             <input
               id={`${idPrefix}-company`}
               type="text"
+              autoComplete="organization"
+              maxLength={150}
               placeholder={isCareer ? 'linkedin.com/in/you or portfolio URL' : 'Your Company'}
-              className={inputWithIconClass}
+              className={`${inputWithIconClass} ${inputErrorClass('company')}`}
               value={formData.company}
               onChange={(e) => update('company', e.target.value)}
+              onBlur={() => validateField('company')}
+              aria-invalid={Boolean(errors.company)}
             />
           </div>
+          {renderError('company')}
         </div>
       </div>
 
@@ -193,13 +252,17 @@ export const InquiryForm = ({
             <input
               id={`${idPrefix}-resume`}
               type="url"
-              required
+              inputMode="url"
+              maxLength={500}
               placeholder="https://drive.google.com/file/d/..."
-              className={inputWithIconClass}
+              className={`${inputWithIconClass} ${inputErrorClass('resumeUrl')}`}
               value={formData.resumeUrl}
               onChange={(e) => update('resumeUrl', e.target.value)}
+              onBlur={() => validateField('resumeUrl')}
+              aria-invalid={Boolean(errors.resumeUrl)}
             />
           </div>
+          {renderError('resumeUrl')}
           <p className={`mt-1.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
             Upload your resume to Google Drive and paste a shareable link (Anyone with the link can view).
           </p>
@@ -236,18 +299,26 @@ export const InquiryForm = ({
           />
           <textarea
             id={`${idPrefix}-message`}
-            required
             rows={isDark ? 5 : 4}
+            maxLength={5000}
             placeholder={
               isCareer
                 ? 'Share your experience, skills, notice period, and why you want to join Xenura...'
                 : 'Tell us about your project, goals, timeline, and requirements...'
             }
-            className={`${inputWithIconClass} resize-none`}
+            className={`${inputWithIconClass} resize-none ${inputErrorClass('message')}`}
             value={formData.message}
             onChange={(e) => update('message', e.target.value)}
+            onBlur={() => validateField('message')}
+            aria-invalid={Boolean(errors.message)}
           />
         </div>
+        {renderError('message')}
+        <p className={`mt-1 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+          {formData.message.trim().length}/5000 characters
+          {!isCareer && ' · minimum 10 characters'}
+          {isCareer && ' · minimum 20 characters'}
+        </p>
       </div>
 
       <div

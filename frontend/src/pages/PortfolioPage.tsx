@@ -1,7 +1,6 @@
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import WhatsAppChatbot from '@/components/WhatsAppChatbot';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal-simple';
 import { usePageMeta } from '@/hooks/usePageMeta';
 
@@ -123,7 +122,6 @@ const PortfolioPage = () => {
         </section>
       </main>
       <Footer />
-      <WhatsAppChatbot />
     </div>
   );
 };

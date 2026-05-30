@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import WhatsAppChatbot from '@/components/WhatsAppChatbot';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal-simple';
 
 const capabilities = [
@@ -278,7 +277,6 @@ const AboutPage: React.FC = () => {
         </section>
       </main>
       <Footer />
-      <WhatsAppChatbot />
     </div>
   );
 };

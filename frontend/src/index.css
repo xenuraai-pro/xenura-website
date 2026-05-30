@@ -715,3 +715,16 @@ html:not(.dark) svg.text-white,
 .flip-card-back {
   transform: rotateY(180deg);
 }
+
+/* ─── AI Chatbot input (theme-aware) ─── */
+
+.ai-chat-input {
+  color: var(--theme-text-strong);
+  background-color: var(--theme-surface-bg);
+  border-color: var(--theme-glass-border);
+}
+
+.ai-chat-input::placeholder {
+  color: var(--theme-text-muted);
+  opacity: 0.85;
+}

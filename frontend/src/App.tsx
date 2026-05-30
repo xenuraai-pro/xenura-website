@@ -12,8 +12,13 @@ import PrivacyPage from "@/pages/PrivacyPage";
 import TermsPage from "@/pages/TermsPage";
 import NotFoundPage from "@/pages/NotFound";
 import AdminLoginPage from "@/pages/AdminLoginPage";
+import AdminForgotPasswordPage from "@/pages/AdminForgotPasswordPage";
+import AdminResetPasswordPage from "@/pages/AdminResetPasswordPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import AdminPromoPage from "@/pages/AdminPromoPage";
+import MentorNetworkPage from "@/pages/MentorNetworkPage";
+import ResourcesPage from "@/pages/ResourcesPage";
+import { GlobalFloatingWidgets } from "@/components/GlobalFloatingWidgets";
 import { Toaster } from "sonner";
 
 function App() {
@@ -24,11 +29,13 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/network" element={<MentorNetworkPage />} />
           <Route path="/industries" element={<IndustriesPage />} />
           <Route path="/career" element={<CareerPage />} />
           <Route path="/services/:slug" element={<ServiceCategoryPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/how-we-work" element={<HowWeWorkPage />} />
+          <Route path="/resources" element={<ResourcesPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route
@@ -44,10 +51,13 @@ function App() {
             element={<BlogPostPage slug="/blog/zero-trust-security-guide" />}
           />
           <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/admin/forgot-password" element={<AdminForgotPasswordPage />} />
+          <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
           <Route path="/admin/promo" element={<AdminPromoPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        <GlobalFloatingWidgets />
       </BrowserRouter>
       <Toaster
         theme="dark"

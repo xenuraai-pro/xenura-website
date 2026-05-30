@@ -25,6 +25,9 @@ export const COMPANY_PHONE = {
 };
 
 export const COMPANY_EMAIL = 'hello@xenuralabs.com';
+export const COMPANY_EMAIL_ALT = 'xenuraai@gmail.com';
+
+export const COMPANY_EMAILS = [COMPANY_EMAIL, COMPANY_EMAIL_ALT] as const;
 
 export const COMPANY_MAP_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(
   COMPANY_ADDRESS.mapQuery

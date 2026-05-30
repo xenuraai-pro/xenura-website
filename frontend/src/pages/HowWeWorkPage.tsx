@@ -1,7 +1,6 @@
 import { ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import WhatsAppChatbot from '@/components/WhatsAppChatbot';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal-simple';
 import { usePageMeta } from '@/hooks/usePageMeta';
 
@@ -119,7 +118,6 @@ const HowWeWorkPage = () => {
         </section>
       </main>
       <Footer />
-      <WhatsAppChatbot />
     </div>
   );
 };

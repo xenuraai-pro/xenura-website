@@ -2,7 +2,6 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowRight, Check, Sparkles } from 'lucide-react';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import WhatsAppChatbot from '@/components/WhatsAppChatbot';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal-simple';
 import { getServicePage, SERVICE_PAGES, SERVICE_SLUGS } from '@/content/servicePages';
 
@@ -224,7 +223,6 @@ const ServiceCategoryPage = () => {
         </section>
       </main>
       <Footer />
-      <WhatsAppChatbot />
     </div>
   );
 };

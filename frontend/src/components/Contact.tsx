@@ -1,8 +1,8 @@
 import { Mail, Phone, MapPin, Clock, Globe } from 'lucide-react';
 import { InquiryForm } from '@/components/InquiryForm';
+import { CompanyEmailLinks } from '@/components/CompanyEmailLinks';
 import {
   COMPANY_ADDRESS,
-  COMPANY_EMAIL,
   COMPANY_MAP_EMBED_URL,
   COMPANY_NAME,
   COMPANY_PHONE,
@@ -65,19 +65,18 @@ export const Contact = () => {
                   </div>
                 </a>
 
-                <a
-                  href={`mailto:${COMPANY_EMAIL}`}
-                  className="flex items-center gap-3 group"
-                  id="contact-email-link"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
+                <div className="flex items-start gap-3 group" id="contact-email-link">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors shrink-0">
                     <Mail className="w-5 h-5 text-blue-400" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-white">{COMPANY_EMAIL}</div>
-                    <div className="text-xs text-slate-500">Get in touch for project inquiries</div>
+                    <CompanyEmailLinks
+                      layout="stack"
+                      linkClassName="text-sm font-medium text-white hover:text-blue-300 transition-colors"
+                    />
+                    <div className="text-xs text-slate-500 mt-1">Get in touch for project inquiries</div>
                   </div>
-                </a>
+                </div>
 
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">

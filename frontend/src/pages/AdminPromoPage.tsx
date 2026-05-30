@@ -9,18 +9,54 @@ import {
   Save,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { validateOptionalUrl } from '@/lib/formValidation';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { api, ModalPromo } from '@/lib/api';
+import { api, getBannerMediaUrl, type ModalPromo } from '@/lib/api';
 import { PopupPreviewMockup, getBannerPreviewUrl } from '@/components/promo/PopupPreviewMockup';
+import { compressPromoBanner } from '@/lib/compressImage';
+import { primePopupPromo } from '@/lib/promoCache';
+
+async function fetchBannerPreviewBlob(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch {
+    return null;
+  }
+}
 
 const AdminPromoPage = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const localPreviewRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [promo, setPromo] = useState<ModalPromo | null>(null);
   const [bannerLink, setBannerLink] = useState('');
+  const [bannerLinkError, setBannerLinkError] = useState('');
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+
+  const setPreviewBlob = (url: string | null) => {
+    if (localPreviewRef.current) {
+      URL.revokeObjectURL(localPreviewRef.current);
+      localPreviewRef.current = null;
+    }
+    if (url) {
+      localPreviewRef.current = url;
+    }
+    setLocalPreviewUrl(url);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (localPreviewRef.current) {
+        URL.revokeObjectURL(localPreviewRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!api.isAuthenticated()) {
@@ -36,6 +72,14 @@ const AdminPromoPage = () => {
       const data = await api.fetchAdminPromo();
       setPromo(data);
       setBannerLink(data.bannerLink || '');
+
+      const remoteUrl = getBannerMediaUrl(data);
+      if (remoteUrl) {
+        const blobUrl = await fetchBannerPreviewBlob(remoteUrl);
+        if (blobUrl) setPreviewBlob(blobUrl);
+      } else {
+        setPreviewBlob(null);
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to load promo.');
     } finally {
@@ -63,7 +107,11 @@ const AdminPromoPage = () => {
 
     setUploading(true);
     try {
-      const { promo: updated } = await api.uploadPopupBanner(file);
+      const optimized = await compressPromoBanner(file);
+      setPreviewBlob(URL.createObjectURL(optimized));
+
+      const { promo: updated } = await api.uploadPopupBanner(optimized);
+      primePopupPromo(updated, optimized);
       setPromo(updated);
       toast.success('Banner uploaded! It will show on the popup left panel.');
     } catch (err: unknown) {
@@ -80,6 +128,7 @@ const AdminPromoPage = () => {
     try {
       const { promo: updated } = await api.deletePopupBanner();
       setPromo(updated);
+      setPreviewBlob(null);
       toast.success('Banner removed.');
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Failed to remove banner.');
@@ -91,6 +140,14 @@ const AdminPromoPage = () => {
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!promo) return;
+
+    const linkError = validateOptionalUrl(bannerLink, 'Banner link');
+    setBannerLinkError(linkError || '');
+    if (linkError) {
+      toast.error(linkError);
+      return;
+    }
+
     setSaving(true);
     try {
       const { promo: updated } = await api.updatePopupPromo({
@@ -106,7 +163,8 @@ const AdminPromoPage = () => {
     }
   };
 
-  const bannerPreview = promo ? getBannerPreviewUrl(promo) : '';
+  const bannerPreview =
+    localPreviewUrl || (promo ? getBannerPreviewUrl(promo) : '');
 
   return (
     <AdminLayout
@@ -167,7 +225,7 @@ const AdminPromoPage = () => {
                 <span className="text-xs text-slate-500">or drag & drop (use button above)</span>
               </button>
 
-              {promo.imageUrl && (
+              {promo.hasBanner && (
                 <button
                   type="button"
                   disabled={uploading}
@@ -181,6 +239,7 @@ const AdminPromoPage = () => {
             </div>
 
             <form
+              noValidate
               onSubmit={handleSaveSettings}
               className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4"
             >
@@ -200,14 +259,33 @@ const AdminPromoPage = () => {
                 </label>
                 <input
                   type="url"
+                  inputMode="url"
+                  maxLength={500}
                   placeholder="https://xenuralabs.com/event"
-                  className="w-full py-2.5 px-3 rounded-lg border border-slate-300 text-slate-900 text-sm"
+                  className={`w-full py-2.5 px-3 rounded-lg border text-slate-900 text-sm ${
+                    bannerLinkError ? 'border-red-400 focus:ring-red-500/30' : 'border-slate-300'
+                  }`}
                   value={bannerLink}
-                  onChange={(e) => setBannerLink(e.target.value)}
+                  onChange={(e) => {
+                    setBannerLink(e.target.value);
+                    if (bannerLinkError) {
+                      setBannerLinkError(validateOptionalUrl(e.target.value, 'Banner link') || '');
+                    }
+                  }}
+                  onBlur={() =>
+                    setBannerLinkError(validateOptionalUrl(bannerLink, 'Banner link') || '')
+                  }
+                  aria-invalid={Boolean(bannerLinkError)}
                 />
-                <p className="text-xs text-slate-500 mt-1">
-                  If set, clicking the banner opens this URL in a new tab.
-                </p>
+                {bannerLinkError ? (
+                  <p className="text-xs text-red-600 mt-1" role="alert">
+                    {bannerLinkError}
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-500 mt-1">
+                    If set, clicking the banner opens this URL in a new tab.
+                  </p>
+                )}
               </div>
 
               <button

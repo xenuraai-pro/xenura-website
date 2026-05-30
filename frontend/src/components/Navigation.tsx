@@ -7,7 +7,7 @@ import {
   Cloud, GitMerge, RefreshCcw, LineChart, Target, Search,
   Share2, FileText, Bot, Building2, GraduationCap, Stethoscope,
   Shield, Microscope, Factory, Radio, Landmark, ShoppingBag,
-  Plane, Truck, Lock, Zap, Signal, Briefcase, Compass, Users,
+  Plane, Truck, Lock, Zap, Signal, Briefcase, Compass, Users, Globe2, FileDown,
 } from 'lucide-react';
 import { useDarkMode } from '@/hooks/user-dark-mode';
 import { api } from '@/lib/api';
@@ -22,9 +22,11 @@ interface CompanyLink { label: string; href: string; sub: string; icon: LucideIc
 
 const companyLinks: CompanyLink[] = [
   { label: 'About Us', href: '/about', sub: 'Our story & team', icon: Building2 },
+  { label: 'Global Network', href: '/network', sub: 'Mentors across 20 countries', icon: Globe2 },
   { label: 'Our Work', href: '/portfolio', sub: 'Projects & case highlights', icon: Briefcase },
   { label: 'How We Work', href: '/how-we-work', sub: 'Process & delivery', icon: Compass },
   { label: 'Career', href: '/career', sub: 'Join the Xenura team', icon: Users },
+  { label: 'Resources', href: '/resources', sub: 'Download PDF brochures', icon: FileDown },
   { label: 'Blog', href: '/#blog', sub: 'Insights & articles', icon: FileText },
 ];
 

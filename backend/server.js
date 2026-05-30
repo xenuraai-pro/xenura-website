@@ -4,21 +4,17 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { Submission, formatSubmission } from './models/Submission.js';
+import { ModalPromo, formatModalPromo, ensureDefaultPromo, DEFAULT_PROMO } from './models/ModalPromo.js';
+import { AdminUser, ensureAdminUser, verifyAdminCredentials, updateAdminPassword } from './models/AdminUser.js';
 import {
-  ModalPromo,
-  formatModalPromo,
-  ensureDefaultPromo,
-  DEFAULT_PROMO,
-  BANNER_IMAGE_PATH,
-} from './models/ModalPromo.js';
-import { uploadBanner, deleteStoredBanner } from './middleware/uploadBanner.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+  PasswordResetToken,
+  createResetTokenValue,
+  hashResetToken,
+} from './models/PasswordResetToken.js';
+import { uploadBanner } from './middleware/uploadBanner.js';
+import { validateContactSubmission, validateBannerLink } from './utils/validateSubmission.js';
+import { isMailConfigured, sendPasswordResetEmail } from './utils/mail.js';
 
 dotenv.config();
 
@@ -62,6 +58,7 @@ const mongoOptions = {
 };
 
 let promoSeeded = false;
+let adminSeeded = false;
 
 async function ensureDb() {
   const uri = getMongoUri();
@@ -87,6 +84,11 @@ async function ensureDb() {
     await ensureDefaultPromo();
     promoSeeded = true;
   }
+
+  if (!adminSeeded) {
+    await ensureAdminUser();
+    adminSeeded = true;
+  }
 }
 
 if (process.env.VERCEL) {
@@ -108,7 +110,6 @@ if (process.env.VERCEL) {
   });
 }
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -127,15 +128,20 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+async function loadPromoSettings() {
+  let promo = await ModalPromo.findOne({ slug: 'popup' }).select('-bannerData');
+  if (!promo) {
+    await ensureDefaultPromo();
+    promo = await ModalPromo.findOne({ slug: 'popup' }).select('-bannerData');
+  }
+  return promo;
+}
+
 /* ─── PUBLIC ENDPOINTS ─── */
 
 app.get('/api/promo/popup', async (_req, res) => {
   try {
-    let promo = await ModalPromo.findOne({ slug: 'popup' }).select('-bannerData');
-    if (!promo) {
-      await ensureDefaultPromo();
-      promo = await ModalPromo.findOne({ slug: 'popup' }).select('-bannerData');
-    }
+    const promo = await loadPromoSettings();
     res.json(formatModalPromo(promo));
   } catch (err) {
     console.error('Promo fetch error:', err.message);
@@ -145,22 +151,22 @@ app.get('/api/promo/popup', async (_req, res) => {
 
 app.get('/api/promo/popup/banner', async (_req, res) => {
   try {
-    const promo = await ModalPromo.findOne({ slug: 'popup' }).select('+bannerData bannerMimeType imageUrl');
+    const promo = await ModalPromo.findOne({ slug: 'popup' }).select('+bannerData bannerMimeType');
 
-    if (promo?.bannerData?.length) {
-      res.set('Content-Type', promo.bannerMimeType || 'image/jpeg');
-      res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
-      return res.send(promo.bannerData);
+    if (!promo?.bannerData?.length) {
+      return res.status(404).json({ error: 'Banner not found.' });
     }
 
-    if (promo?.imageUrl?.startsWith('/uploads/')) {
-      const filePath = path.join(__dirname, promo.imageUrl.replace(/^\//, ''));
-      if (fs.existsSync(filePath)) {
-        return res.sendFile(filePath);
-      }
-    }
+    const buffer = Buffer.isBuffer(promo.bannerData)
+      ? promo.bannerData
+      : Buffer.from(promo.bannerData);
 
-    res.status(404).json({ error: 'Banner not found.' });
+    res.set('Content-Type', promo.bannerMimeType || 'image/jpeg');
+    res.set('Content-Length', String(buffer.length));
+    res.set('Accept-Ranges', 'none');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+
+    return res.end(buffer);
   } catch (err) {
     console.error('Banner serve error:', err.message);
     res.status(500).json({ error: 'Failed to load banner image.' });
@@ -169,31 +175,13 @@ app.get('/api/promo/popup/banner', async (_req, res) => {
 
 app.post('/api/contact', async (req, res) => {
   try {
-    const { name, email, phone, company, budget, message, resumeUrl, source } = req.body;
-
-    if (!name?.trim() || !email?.trim() || !message?.trim()) {
-      return res.status(400).json({
-        error: 'Missing required parameters. Name, email, and message are mandatory.',
-      });
-    }
-
-    const validSource = ['popup', 'contact', 'career'].includes(source) ? source : 'contact';
-
-    if (validSource === 'career' && !resumeUrl?.trim()) {
-      return res.status(400).json({
-        error: 'Resume link is required for career applications.',
-      });
+    const { error, data } = validateContactSubmission(req.body);
+    if (error) {
+      return res.status(400).json({ error });
     }
 
     const submission = await Submission.create({
-      name: name.trim(),
-      email: email.trim(),
-      phone: phone?.trim() || '',
-      company: company?.trim() || '',
-      budget: budget || '',
-      message: message.trim(),
-      resumeUrl: resumeUrl?.trim() || '',
-      source: validSource,
+      ...data,
       status: 'new',
       submittedAt: new Date(),
     });
@@ -209,35 +197,130 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', (req, res) => {
-  const { username, password } = req.body;
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    await ensureDb();
+    const { username, password } = req.body;
 
-  const stripEnv = (v, fallback) =>
-    (v || fallback).trim().replace(/^\uFEFF/, '');
+    if (!username?.trim() || !password?.trim()) {
+      return res.status(400).json({ error: 'Please enter both username and password.' });
+    }
 
-  const adminUsername = stripEnv(process.env.ADMIN_USERNAME, 'admin');
-  const adminPassword = stripEnv(process.env.ADMIN_PASSWORD, 'adminpassword');
+    const admin = await verifyAdminCredentials(username, password);
+    if (admin) {
+      const token = jwt.sign({ role: 'admin', sub: admin._id.toString() }, JWT_SECRET, { expiresIn: '24h' });
+      return res.json({
+        success: true,
+        token,
+        message: 'Access granted. Session initialized.',
+      });
+    }
 
-  if (!username?.trim() || !password?.trim()) {
-    return res.status(400).json({ error: 'Please enter both username and password.' });
+    res.status(401).json({ error: 'Invalid username or password. Authentication failed.' });
+  } catch (err) {
+    console.error('Login error:', err.message);
+    res.status(500).json({ error: 'Unable to sign in right now. Please try again.' });
   }
+});
 
-  const inputUser = username.trim();
-  const inputPass = password.trim();
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    await ensureDb();
 
-  if (
-    inputUser.toLowerCase() === adminUsername.toLowerCase() &&
-    inputPass === adminPassword
-  ) {
-    const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
-    return res.json({
-      success: true,
-      token,
-      message: 'Access granted. Session initialized.',
+    if (!isMailConfigured()) {
+      return res.status(503).json({
+        error: 'Password reset email is not configured. Set RESEND_API_KEY and RESEND_FROM on the server.',
+      });
+    }
+
+    const email = req.body.email?.trim().toLowerCase();
+    if (!email) {
+      return res.status(400).json({ error: 'Email address is required.' });
+    }
+
+    const admin = await AdminUser.findOne({ email });
+    if (!admin) {
+      return res.json({
+        success: true,
+        message: 'If that email is registered, a reset link has been sent.',
+      });
+    }
+
+    await PasswordResetToken.deleteMany({ adminId: admin._id, usedAt: null });
+
+    const rawToken = createResetTokenValue();
+    const tokenHash = hashResetToken(rawToken);
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await PasswordResetToken.create({
+      adminId: admin._id,
+      tokenHash,
+      expiresAt,
     });
-  }
 
-  res.status(401).json({ error: 'Invalid username or password. Authentication failed.' });
+    const frontendBase = (process.env.FRONTEND_URL || 'http://localhost:5173')
+      .split(',')[0]
+      .trim()
+      .replace(/\/$/, '');
+    const resetUrl = `${frontendBase}/admin/reset-password?token=${rawToken}`;
+
+    await sendPasswordResetEmail({ to: admin.email, resetUrl });
+
+    res.json({
+      success: true,
+      message: 'If that email is registered, a reset link has been sent.',
+    });
+  } catch (err) {
+    console.error('Forgot password error:', err.message);
+    res.status(500).json({ error: 'Unable to send reset email. Please try again later.' });
+  }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    await ensureDb();
+
+    const token = req.body.token?.trim();
+    const password = req.body.password?.trim();
+    const confirmPassword = req.body.confirmPassword?.trim();
+
+    if (!token) {
+      return res.status(400).json({ error: 'Reset token is missing or invalid.' });
+    }
+    if (!password || !confirmPassword) {
+      return res.status(400).json({ error: 'Please enter and confirm your new password.' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    }
+    if (password !== confirmPassword) {
+      return res.status(400).json({ error: 'Passwords do not match.' });
+    }
+
+    const tokenHash = hashResetToken(token);
+    const resetRecord = await PasswordResetToken.findOne({
+      tokenHash,
+      usedAt: null,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!resetRecord) {
+      return res.status(400).json({ error: 'This reset link is invalid or has expired.' });
+    }
+
+    await updateAdminPassword(resetRecord.adminId, password);
+    resetRecord.usedAt = new Date();
+    await resetRecord.save();
+    await PasswordResetToken.deleteMany({ adminId: resetRecord.adminId, usedAt: null });
+
+    res.json({
+      success: true,
+      message: 'Password updated successfully. You can sign in with your new password.',
+    });
+  } catch (err) {
+    console.error('Reset password error:', err.message);
+    res.status(500).json({ error: 'Unable to reset password. Please try again.' });
+  }
 });
 
 /* ─── PROTECTED ADMIN ENDPOINTS ─── */
@@ -303,11 +386,7 @@ app.delete('/api/admin/submissions/:id', authenticateToken, async (req, res) => 
 
 app.get('/api/admin/promo/popup', authenticateToken, async (_req, res) => {
   try {
-    let promo = await ModalPromo.findOne({ slug: 'popup' }).select('-bannerData');
-    if (!promo) {
-      await ensureDefaultPromo();
-      promo = await ModalPromo.findOne({ slug: 'popup' }).select('-bannerData');
-    }
+    const promo = await loadPromoSettings();
     res.json(formatModalPromo(promo));
   } catch (err) {
     console.error('Admin promo fetch error:', err.message);
@@ -318,6 +397,11 @@ app.get('/api/admin/promo/popup', authenticateToken, async (_req, res) => {
 app.put('/api/admin/promo/popup', authenticateToken, async (req, res) => {
   try {
     const { isActive, bannerLink } = req.body;
+
+    const linkError = validateBannerLink(bannerLink);
+    if (linkError) {
+      return res.status(400).json({ error: linkError });
+    }
 
     const promo = await ModalPromo.findOneAndUpdate(
       { slug: 'popup' },
@@ -349,18 +433,11 @@ app.post(
         return res.status(400).json({ error: 'Please choose an image file to upload.' });
       }
 
-      const existing = await ModalPromo.findOne({ slug: 'popup' }).select('imageUrl');
-
-      if (existing?.imageUrl?.startsWith('/uploads/')) {
-        deleteStoredBanner(existing.imageUrl);
-      }
-
       const promo = await ModalPromo.findOneAndUpdate(
         { slug: 'popup' },
         {
           bannerData: req.file.buffer,
           bannerMimeType: req.file.mimetype,
-          imageUrl: BANNER_IMAGE_PATH,
           isActive: true,
         },
         { new: true, upsert: true, setDefaultsOnInsert: true }
@@ -380,21 +457,16 @@ app.post(
 
 app.delete('/api/admin/promo/popup/banner', authenticateToken, async (_req, res) => {
   try {
-    const existing = await ModalPromo.findOne({ slug: 'popup' }).select('imageUrl');
-    if (existing?.imageUrl?.startsWith('/uploads/')) {
-      deleteStoredBanner(existing.imageUrl);
-    }
-
     const promo = await ModalPromo.findOneAndUpdate(
       { slug: 'popup' },
-      { $unset: { bannerData: 1 }, bannerMimeType: '', imageUrl: '' },
+      { $unset: { bannerData: 1 }, bannerMimeType: '' },
       { new: true }
     ).select('-bannerData');
 
     res.json({
       success: true,
       message: 'Banner image removed.',
-      promo: formatModalPromo(promo || { slug: 'popup', ...DEFAULT_PROMO, imageUrl: '' }),
+      promo: formatModalPromo(promo || { slug: 'popup', ...DEFAULT_PROMO }),
     });
   } catch (err) {
     console.error('Banner delete error:', err.message);

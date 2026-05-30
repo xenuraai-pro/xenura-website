@@ -596,8 +596,7 @@ const Hero = () => {
               <span className="gradient-text-secondary">Scale</span>
             </h1>
             <p className="text-base sm:text-lg text-slate-400 max-w-xl mb-8 sm:mb-10 leading-relaxed" style={{ color: 'var(--theme-text-muted)' }}>
-              We design, build, and optimize web and mobile solutions with AI at the core.
-              From strategy to launch - Xenura delivers impact.
+              Turn bold ideas into live products — faster launches, AI at the core, and measurable growth from strategy to scale.
             </p>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 sm:gap-4 max-w-md">
               <a href="#contact" className="btn-primary flex items-center justify-center gap-2" id="hero-cta-consult">

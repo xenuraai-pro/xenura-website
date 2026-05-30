@@ -8,13 +8,14 @@ import FeatureGrid from '@/components/FeatureGrid';
 import Innovation from '@/components/Innovation';
 import TestimonialMarquee from '@/components/TestimonialMarquee';
 import Blog from '@/components/Blog';
+import DownloadResources from '@/components/DownloadResources';
 import FaqXenuraPremium from '@/components/FaqXenuraPremium';
 import { Contact } from '@/components/Contact';
 import SearchShowcase from '@/components/SearchShowcase';
 import { Footer } from '@/components/Footer';
-import WhatsAppChatbot from '@/components/WhatsAppChatbot';
 import LeadCaptureModal from '@/components/LeadCaptureModal';
 import PageLoader from '@/components/PageLoader';
+import { prefetchPopupPromo } from '@/lib/promoCache';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal-simple';
 
 const GlowDivider = () => <div className="glow-line" />;
@@ -35,6 +36,7 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     if (!showContent) return;
+    void prefetchPopupPromo();
     const timer = window.setTimeout(() => setShowLeadModal(true), 700);
     return () => window.clearTimeout(timer);
   }, [showContent]);
@@ -63,6 +65,8 @@ const HomePage: React.FC = () => {
             <GlowDivider />
             <Blog />
             <GlowDivider />
+            <DownloadResources />
+            <GlowDivider />
             <FaqXenuraPremium />
             <GlowDivider />
             <Contact />
@@ -70,7 +74,6 @@ const HomePage: React.FC = () => {
             <SearchShowcase />
           </main>
           <Footer />
-          <WhatsAppChatbot />
         </div>
       )}
     </div>

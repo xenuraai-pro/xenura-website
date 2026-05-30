@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import WhatsAppChatbot from '@/components/WhatsAppChatbot';
 import { InquiryForm } from '@/components/InquiryForm';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal-simple';
 import {
@@ -537,7 +536,6 @@ const CareerPage: React.FC = () => {
         </section>
       </main>
       <Footer />
-      <WhatsAppChatbot />
     </div>
   );
 };

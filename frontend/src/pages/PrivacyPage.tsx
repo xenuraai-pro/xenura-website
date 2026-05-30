@@ -1,8 +1,8 @@
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import WhatsAppChatbot from '@/components/WhatsAppChatbot';
 import { usePageMeta } from '@/hooks/usePageMeta';
-import { COMPANY_EMAIL, COMPANY_NAME, BRAND_NAME } from '@/content/companyContact';
+import { companyEmailsText } from '@/components/CompanyEmailLinks';
+import { COMPANY_NAME, BRAND_NAME } from '@/content/companyContact';
 
 const sections = [
   {
@@ -27,7 +27,7 @@ const sections = [
   },
   {
     title: 'Contact',
-    body: `For privacy-related questions, contact ${COMPANY_NAME} at ${COMPANY_EMAIL}.`,
+    body: `For privacy-related questions, contact ${COMPANY_NAME} at ${companyEmailsText()}.`,
   },
 ];
 
@@ -67,7 +67,6 @@ const PrivacyPage = () => {
         </section>
       </main>
       <Footer />
-      <WhatsAppChatbot />
     </div>
   );
 };

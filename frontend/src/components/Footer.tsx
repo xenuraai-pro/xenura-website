@@ -1,5 +1,6 @@
 import { ArrowUpRight, MapPin, Mail, Phone } from 'lucide-react';
-import { COMPANY_ADDRESS, COMPANY_EMAIL, COMPANY_PHONE, BRAND_NAME, COMPANY_SOCIAL } from '@/content/companyContact';
+import { COMPANY_ADDRESS, COMPANY_PHONE, BRAND_NAME, COMPANY_SOCIAL } from '@/content/companyContact';
+import { CompanyEmailLinks } from '@/components/CompanyEmailLinks';
 import { BRAND_TAGLINE } from '@/content/brandAssets';
 import { Logo } from '@/components/Logo';
 import { SERVICE_PATHS } from '@/content/servicePages';
@@ -13,15 +14,15 @@ const footerData = {
   ],
   company: [
     { label: 'About Us', href: '/about' },
+    { label: 'Global Network', href: '/network' },
     { label: 'Our Work', href: '/portfolio' },
     { label: 'How We Work', href: '/how-we-work' },
-    { label: 'Industries', href: '/industries' },
   ],
   quickLinks: [
+    { label: 'Industries', href: '/industries' },
     { label: 'Career', href: '/career' },
-    { label: 'Blogs', href: '/#blog' },
+    { label: 'Resources', href: '/resources' },
     { label: 'Contact', href: '/#contact' },
-    { label: 'Services', href: '/#services' },
   ],
 };
 
@@ -144,9 +145,9 @@ export const Footer = () => (
                 ))}
               </address>
             </div>
-            <div className="flex items-center gap-2.5">
-              <Mail className="w-4 h-4 text-[#7f4adf] shrink-0"/>
-              <a href={`mailto:${COMPANY_EMAIL}`} className="text-sm text-slate-500 hover:text-white transition-colors">{COMPANY_EMAIL}</a>
+            <div className="flex items-start gap-2.5">
+              <Mail className="w-4 h-4 text-[#7f4adf] shrink-0 mt-0.5"/>
+              <CompanyEmailLinks layout="stack" className="text-sm text-slate-500" linkClassName="text-sm text-slate-500 hover:text-white transition-colors" />
             </div>
             <div className="flex items-center gap-2.5">
               <Phone className="w-4 h-4 text-[#7f4adf] shrink-0"/>
@@ -159,7 +160,7 @@ export const Footer = () => (
       {/* Bottom bar */}
       <div className="glow-line mb-5"/>
       <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-600">
-        <p>© 2025 {BRAND_NAME}. All rights reserved.</p>
+        <p>© 2026 {BRAND_NAME}. All rights reserved.</p>
         <div className="flex items-center gap-4">
           <a href="/privacy" className="hover:text-slate-400 transition-colors">Privacy Policy</a>
           <span>|</span>

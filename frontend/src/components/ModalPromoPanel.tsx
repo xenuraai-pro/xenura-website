@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { api, ModalPromo, resolveMediaUrl } from '@/lib/api';
+import type { ModalPromo } from '@/lib/api';
+import {
+  getCachedBannerSrc,
+  getCachedPopupPromo,
+  prefetchPopupPromo,
+  subscribeBannerReady,
+} from '@/lib/promoCache';
 import { DefaultPromoPanel } from '@/components/promo/DefaultPromoPanel';
 import { PromoBannerPanel } from '@/components/promo/PromoBannerPanel';
 
@@ -8,21 +14,38 @@ type Props = {
 };
 
 export const ModalPromoPanel = ({ onClose }: Props) => {
-  const [promo, setPromo] = useState<ModalPromo | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [promo, setPromo] = useState<ModalPromo | null>(() => getCachedPopupPromo());
+  const [loading, setLoading] = useState(() => !getCachedPopupPromo());
+  const [bannerSrc, setBannerSrc] = useState(() => {
+    const cached = getCachedPopupPromo();
+    return cached ? getCachedBannerSrc(cached) : '';
+  });
 
   useEffect(() => {
-    api
-      .fetchPopupPromo()
-      .then(setPromo)
-      .catch(() => setPromo(null))
-      .finally(() => setLoading(false));
+    let active = true;
+
+    prefetchPopupPromo().then((data) => {
+      if (!active) return;
+      setPromo(data);
+      if (data) setBannerSrc(getCachedBannerSrc(data));
+      setLoading(false);
+    });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const bannerSrc = promo?.imageUrl ? resolveMediaUrl(promo.imageUrl) : '';
-  const showBanner = promo?.isActive && bannerSrc;
+  useEffect(() => {
+    if (!promo) return;
+    const syncBanner = () => setBannerSrc(getCachedBannerSrc(promo));
+    syncBanner();
+    return subscribeBannerReady(syncBanner);
+  }, [promo]);
 
-  if (loading) {
+  const showBanner = Boolean(promo?.isActive && promo?.hasBanner && bannerSrc);
+
+  if (loading && !promo) {
     return (
       <div className="w-full lg:w-[42%] relative min-h-[180px] sm:min-h-[220px] lg:min-h-[280px] bg-gradient-to-br from-[#08295a] via-[#4a1c96] to-[#cc4a18] animate-pulse shrink-0" />
     );
@@ -31,6 +54,7 @@ export const ModalPromoPanel = ({ onClose }: Props) => {
   if (showBanner && promo) {
     return (
       <PromoBannerPanel
+        key={bannerSrc}
         src={bannerSrc}
         bannerLink={promo.bannerLink || undefined}
         onClose={onClose}

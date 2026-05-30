@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-/** Public URL path served by GET /api/promo/popup/banner (image stored as MongoDB BLOB). */
+/** API path where the banner BLOB is served (not stored on disk). */
 export const BANNER_IMAGE_PATH = '/api/promo/popup/banner';
 
 const DEFAULT_PROMO = {
@@ -19,7 +19,6 @@ const DEFAULT_PROMO = {
   gradientStart: '#08295a',
   gradientMid: '#4a1c96',
   gradientEnd: '#cc4a18',
-  imageUrl: '',
 };
 
 const modalPromoSchema = new mongoose.Schema(
@@ -34,7 +33,6 @@ const modalPromoSchema = new mongoose.Schema(
     gradientStart: { type: String, default: '#08295a' },
     gradientMid: { type: String, default: '#4a1c96' },
     gradientEnd: { type: String, default: '#cc4a18' },
-    imageUrl: { type: String, default: '' },
     bannerData: { type: Buffer, select: false },
     bannerMimeType: { type: String, default: '' },
     bannerLink: { type: String, default: '' },
@@ -45,9 +43,7 @@ const modalPromoSchema = new mongoose.Schema(
 export const ModalPromo = mongoose.model('ModalPromo', modalPromoSchema);
 
 export function formatModalPromo(doc) {
-  const hasBlobBanner = Boolean(doc.bannerMimeType);
-  const hasLegacyFile = Boolean(doc.imageUrl?.startsWith('/uploads/'));
-  const imageUrl = hasBlobBanner ? BANNER_IMAGE_PATH : doc.imageUrl || '';
+  const hasBanner = Boolean(doc.bannerMimeType);
 
   return {
     slug: doc.slug,
@@ -60,9 +56,9 @@ export function formatModalPromo(doc) {
     gradientStart: doc.gradientStart || DEFAULT_PROMO.gradientStart,
     gradientMid: doc.gradientMid || DEFAULT_PROMO.gradientMid,
     gradientEnd: doc.gradientEnd || DEFAULT_PROMO.gradientEnd,
-    imageUrl,
+    imageUrl: hasBanner ? BANNER_IMAGE_PATH : '',
     bannerLink: doc.bannerLink || '',
-    hasBanner: hasBlobBanner || hasLegacyFile,
+    hasBanner,
     updatedAt: doc.updatedAt?.toISOString?.() || new Date().toISOString(),
   };
 }
