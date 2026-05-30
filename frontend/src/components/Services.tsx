@@ -82,7 +82,6 @@ const Services = () => (
         </h2>
         <p className="text-base leading-relaxed" style={{ color: 'var(--theme-text-muted)' }}>
           From conception to implementation, we deliver excellence at every step.
-          <span className="block text-sm text-orange-400 mt-2">Hover any card to explore</span>
         </p>
       </div>
 

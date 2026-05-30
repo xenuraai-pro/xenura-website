@@ -76,7 +76,6 @@ const AdminLoginPage = () => {
         <div className="w-full max-w-md">
           <div className="lg:hidden mb-8">
             <Logo size="md" href="/" />
-            <p className="text-xs text-slate-500 mt-2">Admin sign in</p>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-8">

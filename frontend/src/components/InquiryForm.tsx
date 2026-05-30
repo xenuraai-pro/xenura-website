@@ -184,7 +184,7 @@ export const InquiryForm = ({
             type="email"
             autoComplete="email"
             maxLength={254}
-            placeholder="you@company.com"
+            placeholder="your.company.com"
             className={`${inputClass} ${inputErrorClass('email')}`}
             value={formData.email}
             onChange={(e) => update('email', e.target.value)}

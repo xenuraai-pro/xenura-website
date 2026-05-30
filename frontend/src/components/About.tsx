@@ -4,7 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 interface Stat { icon: LucideIcon; value: string; label: string; }
 
 const stats: Stat[] = [
-  { icon: Award,      value: '12',   label: 'Projects' },
+  { icon: Award,      value: '12+',  label: 'Projects' },
   { icon: Users,      value: '10+',  label: 'Clients'  },
   { icon: TrendingUp, value: '2',    label: 'Years'    },
   { icon: Clock,      value: '24/7', label: 'Support'  },
@@ -21,17 +21,16 @@ const StatCard = ({ stat }: { stat: Stat }) => {
   const Icon = stat.icon;
   return (
     <div
-      className="rounded-xl px-4 py-4"
+      className="rounded-xl px-4 py-4 text-center"
       style={{ border: '1px solid var(--theme-glass-border)', background: 'var(--theme-surface-bg)' }}
     >
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center justify-center gap-2 mb-2">
         <Icon className="w-4 h-4 text-orange-400 shrink-0" />
         <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--theme-text-muted)' }}>
           {stat.label}
         </span>
       </div>
-      {/* Use style color so it works in BOTH light (navy) and dark (white) */}
-      <p className="text-2xl sm:text-3xl font-extrabold" style={{ color: 'var(--theme-text-strong)' }}>
+      <p className="text-2xl sm:text-3xl font-extrabold text-center" style={{ color: 'var(--theme-text-strong)' }}>
         {stat.value}
       </p>
     </div>
