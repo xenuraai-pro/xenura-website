@@ -4,10 +4,17 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Submission, formatSubmission } from './models/Submission.js';
-import { ModalPromo, formatModalPromo, ensureDefaultPromo, DEFAULT_PROMO } from './models/ModalPromo.js';
+import {
+  ModalPromo,
+  formatModalPromo,
+  ensureDefaultPromo,
+  DEFAULT_PROMO,
+  BANNER_IMAGE_PATH,
+} from './models/ModalPromo.js';
 import { uploadBanner, deleteStoredBanner } from './middleware/uploadBanner.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -124,15 +131,39 @@ const authenticateToken = (req, res, next) => {
 
 app.get('/api/promo/popup', async (_req, res) => {
   try {
-    let promo = await ModalPromo.findOne({ slug: 'popup' });
+    let promo = await ModalPromo.findOne({ slug: 'popup' }).select('-bannerData');
     if (!promo) {
       await ensureDefaultPromo();
-      promo = await ModalPromo.findOne({ slug: 'popup' });
+      promo = await ModalPromo.findOne({ slug: 'popup' }).select('-bannerData');
     }
     res.json(formatModalPromo(promo));
   } catch (err) {
     console.error('Promo fetch error:', err.message);
     res.status(500).json({ error: 'Failed to load promo content.' });
+  }
+});
+
+app.get('/api/promo/popup/banner', async (_req, res) => {
+  try {
+    const promo = await ModalPromo.findOne({ slug: 'popup' }).select('+bannerData bannerMimeType imageUrl');
+
+    if (promo?.bannerData?.length) {
+      res.set('Content-Type', promo.bannerMimeType || 'image/jpeg');
+      res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
+      return res.send(promo.bannerData);
+    }
+
+    if (promo?.imageUrl?.startsWith('/uploads/')) {
+      const filePath = path.join(__dirname, promo.imageUrl.replace(/^\//, ''));
+      if (fs.existsSync(filePath)) {
+        return res.sendFile(filePath);
+      }
+    }
+
+    res.status(404).json({ error: 'Banner not found.' });
+  } catch (err) {
+    console.error('Banner serve error:', err.message);
+    res.status(500).json({ error: 'Failed to load banner image.' });
   }
 });
 
@@ -272,10 +303,10 @@ app.delete('/api/admin/submissions/:id', authenticateToken, async (req, res) => 
 
 app.get('/api/admin/promo/popup', authenticateToken, async (_req, res) => {
   try {
-    let promo = await ModalPromo.findOne({ slug: 'popup' });
+    let promo = await ModalPromo.findOne({ slug: 'popup' }).select('-bannerData');
     if (!promo) {
       await ensureDefaultPromo();
-      promo = await ModalPromo.findOne({ slug: 'popup' });
+      promo = await ModalPromo.findOne({ slug: 'popup' }).select('-bannerData');
     }
     res.json(formatModalPromo(promo));
   } catch (err) {
@@ -318,18 +349,22 @@ app.post(
         return res.status(400).json({ error: 'Please choose an image file to upload.' });
       }
 
-      const imageUrl = `/uploads/promo/${req.file.filename}`;
-      const existing = await ModalPromo.findOne({ slug: 'popup' });
+      const existing = await ModalPromo.findOne({ slug: 'popup' }).select('imageUrl');
 
-      if (existing?.imageUrl) {
+      if (existing?.imageUrl?.startsWith('/uploads/')) {
         deleteStoredBanner(existing.imageUrl);
       }
 
       const promo = await ModalPromo.findOneAndUpdate(
         { slug: 'popup' },
-        { imageUrl, isActive: true },
+        {
+          bannerData: req.file.buffer,
+          bannerMimeType: req.file.mimetype,
+          imageUrl: BANNER_IMAGE_PATH,
+          isActive: true,
+        },
         { new: true, upsert: true, setDefaultsOnInsert: true }
-      );
+      ).select('-bannerData');
 
       res.json({
         success: true,
@@ -345,16 +380,16 @@ app.post(
 
 app.delete('/api/admin/promo/popup/banner', authenticateToken, async (_req, res) => {
   try {
-    const existing = await ModalPromo.findOne({ slug: 'popup' });
-    if (existing?.imageUrl) {
+    const existing = await ModalPromo.findOne({ slug: 'popup' }).select('imageUrl');
+    if (existing?.imageUrl?.startsWith('/uploads/')) {
       deleteStoredBanner(existing.imageUrl);
     }
 
     const promo = await ModalPromo.findOneAndUpdate(
       { slug: 'popup' },
-      { imageUrl: '' },
+      { $unset: { bannerData: 1 }, bannerMimeType: '', imageUrl: '' },
       { new: true }
-    );
+    ).select('-bannerData');
 
     res.json({
       success: true,
