@@ -90,10 +90,10 @@ export function AiChatbot() {
     <div className="relative">
       {isOpen && (
         <div
-          className="absolute bottom-16 right-0 w-[min(100vw-3rem,340px)] glass-card rounded-2xl overflow-hidden shadow-2xl shadow-black/40 animate-fade-in-up mb-3 flex flex-col max-h-[min(70vh,460px)]"
+          className="ai-chat-panel absolute bottom-16 right-0 w-[min(100vw-3rem,340px)] glass-card rounded-2xl overflow-hidden shadow-2xl shadow-black/40 animate-fade-in-up mb-3 flex flex-col max-h-[min(70vh,460px)]"
           style={{ animationDuration: '300ms' }}
         >
-          <div className="bg-gradient-to-r from-[#7f4adf] to-[#5b21b6] p-4 flex items-center justify-between shrink-0">
+          <div className="ai-chat-header bg-gradient-to-r from-[#7f4adf] to-[#5b21b6] p-4 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-white/15 backdrop-blur flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />

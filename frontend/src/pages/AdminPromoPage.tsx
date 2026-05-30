@@ -7,6 +7,7 @@ import {
   Megaphone,
   Eye,
   Save,
+  ImageIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { validateOptionalUrl } from '@/lib/formValidation';
@@ -188,62 +189,81 @@ const AdminPromoPage = () => {
           <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
         </div>
       ) : (
-        <div className="grid xl:grid-cols-2 gap-6 max-w-6xl">
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Megaphone className="w-5 h-5 text-orange-600" />
-                <h2 className="font-bold text-slate-900">Upload banner image</h2>
+        <div className="grid xl:grid-cols-[minmax(0,400px)_1fr] gap-6 xl:gap-8 items-start max-w-7xl">
+          <div className="space-y-5 xl:sticky xl:top-24">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/80">
+                <div className="flex items-center gap-2">
+                  <Megaphone className="w-5 h-5 text-orange-600" />
+                  <h2 className="font-bold text-slate-900">Banner image</h2>
+                </div>
+                <p className="text-sm text-slate-500 mt-1">
+                  Portrait, square, or landscape · max 5 MB
+                </p>
               </div>
-              <p className="text-sm text-slate-500 mb-4">
-                Portrait, square, or landscape images are supported. The full image is shown without
-                cropping. Max 5 MB. JPG, PNG, GIF, or WebP.
-              </p>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
-                className="hidden"
-                onChange={handleFileSelect}
-              />
-
-              <button
-                type="button"
-                disabled={uploading}
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full flex flex-col items-center justify-center gap-2 py-10 px-4 rounded-xl border-2 border-dashed border-slate-300 hover:border-orange-400 hover:bg-orange-50/50 transition-colors disabled:opacity-50"
-              >
-                {uploading ? (
-                  <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+              <div className="p-5 space-y-4">
+                {bannerPreview && promo.hasBanner ? (
+                  <div className="rounded-lg border border-slate-200 overflow-hidden bg-slate-900">
+                    <img
+                      src={bannerPreview}
+                      alt="Current banner"
+                      className="w-full h-auto max-h-40 object-contain mx-auto block"
+                    />
+                  </div>
                 ) : (
-                  <Upload className="w-8 h-8 text-slate-400" />
+                  <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 py-8 flex flex-col items-center gap-2 text-slate-400">
+                    <ImageIcon className="w-8 h-8" />
+                    <span className="text-xs">No banner uploaded</span>
+                  </div>
                 )}
-                <span className="text-sm font-semibold text-slate-700">
-                  {uploading ? 'Uploading...' : 'Click to upload banner'}
-                </span>
-                <span className="text-xs text-slate-500">or drag & drop (use button above)</span>
-              </button>
 
-              {promo.hasBanner && (
-                <button
-                  type="button"
-                  disabled={uploading}
-                  onClick={handleRemoveBanner}
-                  className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm font-semibold hover:bg-red-100 disabled:opacity-50"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Remove banner
-                </button>
-              )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold disabled:opacity-50 transition-colors"
+                  >
+                    {uploading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4" />
+                    )}
+                    {uploading ? 'Uploading…' : 'Upload image'}
+                  </button>
+
+                  {promo.hasBanner && (
+                    <button
+                      type="button"
+                      disabled={uploading}
+                      onClick={handleRemoveBanner}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-200 bg-white text-red-700 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <form
               noValidate
               onSubmit={handleSaveSettings}
-              className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4"
+              className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4"
             >
-              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 cursor-pointer">
+              <h3 className="font-bold text-slate-900 text-sm">Popup settings</h3>
+
+              <label className="flex items-center gap-2.5 text-sm font-medium text-slate-700 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={promo.isActive}
@@ -254,16 +274,16 @@ const AdminPromoPage = () => {
               </label>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Banner click link (optional)
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  Banner click link <span className="text-slate-400 font-normal">(optional)</span>
                 </label>
                 <input
                   type="url"
                   inputMode="url"
                   maxLength={500}
                   placeholder="https://xenuralabs.com/event"
-                  className={`w-full py-2.5 px-3 rounded-lg border text-slate-900 text-sm ${
-                    bannerLinkError ? 'border-red-400 focus:ring-red-500/30' : 'border-slate-300'
+                  className={`w-full py-2.5 px-3 rounded-lg border text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/25 ${
+                    bannerLinkError ? 'border-red-400' : 'border-slate-300'
                   }`}
                   value={bannerLink}
                   onChange={(e) => {
@@ -278,32 +298,38 @@ const AdminPromoPage = () => {
                   aria-invalid={Boolean(bannerLinkError)}
                 />
                 {bannerLinkError ? (
-                  <p className="text-xs text-red-600 mt-1" role="alert">
+                  <p className="text-xs text-red-600 mt-1.5" role="alert">
                     {bannerLinkError}
                   </p>
                 ) : (
-                  <p className="text-xs text-slate-500 mt-1">
-                    If set, clicking the banner opens this URL in a new tab.
+                  <p className="text-xs text-slate-500 mt-1.5">
+                    Opens in a new tab when visitors click the banner.
                   </p>
                 )}
               </div>
 
-              <button
-                type="submit"
-                disabled={saving}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold text-sm disabled:opacity-50"
-              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Save settings
-              </button>
+              <div className="pt-1 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm disabled:opacity-50 transition-colors"
+                >
+                  {saving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Save settings
+                </button>
+              </div>
             </form>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-            <div className="mb-4">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6 min-w-0">
+            <div className="mb-5 pb-4 border-b border-slate-100">
               <h2 className="font-bold text-slate-900">Live popup preview</h2>
-              <p className="text-sm text-slate-600 mt-1">
-                This is how visitors see the popup on your website.
+              <p className="text-sm text-slate-500 mt-1">
+                How visitors see the popup on mobile and desktop.
               </p>
             </div>
             <PopupPreviewMockup promo={promo} bannerPreviewUrl={bannerPreview} />

@@ -297,6 +297,7 @@ html:not(.dark) :is(h1, h2, h3, h4, p, span, a, li).text-white {
 /* Keep proper contrast for explicitly dark sections while in light mode. */
 html:not(.dark) .section-gradient-dark :is(h1, h2, h3, h4, p, span, a, li).text-white,
 html:not(.dark) footer :is(h1, h2, h3, h4, p, span, a, li).text-white,
+html:not(.dark) .ai-chat-panel .ai-chat-header :is(h1, h2, h3, h4, p, span, a, li).text-white,
 html:not(.dark) .popup-promo-panel :is(h1, h2, h3, h4, p, span, a, li),
 html:not(.dark) .popup-promo-panel :is(h1, h2, h3, h4, p, span, a, li).text-white,
 html:not(.dark) .faq-video-preview .faq-video-title,
@@ -306,6 +307,10 @@ html:not(.dark) .faq-video-preview .faq-video-title.text-white {
 
 html:not(.dark) .faq-video-preview .faq-video-subtitle {
   color: rgba(255, 255, 255, 0.88) !important;
+}
+
+html:not(.dark) .ai-chat-panel .ai-chat-header .text-purple-100 {
+  color: rgba(243, 232, 255, 0.95) !important;
 }
 
 html:not(.dark) .faq-video-preview .faq-video-badge,

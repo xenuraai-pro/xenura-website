@@ -8,7 +8,6 @@ import FeatureGrid from '@/components/FeatureGrid';
 import Innovation from '@/components/Innovation';
 import TestimonialMarquee from '@/components/TestimonialMarquee';
 import Blog from '@/components/Blog';
-import DownloadResources from '@/components/DownloadResources';
 import FaqXenuraPremium from '@/components/FaqXenuraPremium';
 import { Contact } from '@/components/Contact';
 import SearchShowcase from '@/components/SearchShowcase';
@@ -64,8 +63,6 @@ const HomePage: React.FC = () => {
             <TestimonialMarquee />
             <GlowDivider />
             <Blog />
-            <GlowDivider />
-            <DownloadResources />
             <GlowDivider />
             <FaqXenuraPremium />
             <GlowDivider />
